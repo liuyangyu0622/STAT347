@@ -1,0 +1,73 @@
+---
+title: "STAT34700-HW4 Problem 2"
+author: "Yangyu Liu"
+date: "February 11, 2018"
+output:
+  html_document: default
+  pdf_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(cache=TRUE)
+knitr::opts_chunk$set(echo=FALSE)
+knitr::opts_chunk$set(message=FALSE)
+library(faraway)
+library(lme4)
+library(ggplot2)
+```
+
+# Problem 1
+
+$$y_{ij}=\mu+\alpha_i+\epsilon_{ij},\alpha_i\overset{iid}{\sim}N(0,\sigma^2_\alpha),\epsilon_{ij}\overset{iid}{\sim}N(0,\sigma^2_\epsilon)$$
+
+## (a)
+
+```{r}
+data(coagulation)
+ggplot(coagulation, aes(x=diet, y=coag))+geom_point(position = position_jitter(width=0.1, height=0.0))
+```
+
+## (b)
+
+```{r}
+fit_fix = lm (coag ~ diet, data = coagulation)
+summary(fit_fix)
+predict(fit_fix, new=data.frame(diet="D"), interval="prediction")
+```
+
+## c
+
+```{r}
+fit_ran=lmer(coag~1+(1|diet),data=coagulation)
+summary(fit_ran)
+#predicted value
+predict(fit_ran, newdata=data.frame(diet="D"))
+#bootstrap to get variance of random effects
+resid.sd <- as.data.frame(VarCorr(fit_ran))$sdcor[2]
+pv = numeric(1000)
+set.seed(123)
+for(i in 1:1000){
+  y <- unlist(simulate(fit_ran, use.u=TRUE))
+  fit_ran1 <- refit(fit_ran, y)
+  pv[i] <- predict(fit_ran1, newdata=data.frame(diet="D")) + rnorm(n=1,sd=resid.sd)
+}
+quantile(pv, c(0.025, 0.975))
+```
+
+## d
+
+```{r}
+predict(fit_ran, re.form=~0)[1]
+group.sd <- as.data.frame(VarCorr(fit_ran))$sdcor[1]
+pv2 <- numeric(1000)
+for(i in 1:1000){
+  y2 <- unlist(simulate(fit_ran))
+  fit_ran2 <- refit(fit_ran, y2)
+  pv2[i] <- predict(fit_ran2, re.form=~0)[1] + rnorm(n=1,sd=group.sd) + rnorm(n=1,sd=resid.sd)
+}
+quantile(pv2, c(0.025, 0.975))
+
+```
+
+## e
+Since the effects of the initial diet for this animal have washed out, so this is equal to the answer in (d). 

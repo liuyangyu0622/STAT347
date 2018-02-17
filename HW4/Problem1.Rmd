@@ -1,0 +1,64 @@
+---
+title: "STAT34700-HW4 Problem 1"
+author: "Yangyu Liu"
+date: "February 11, 2018"
+output:
+  html_document: default
+  pdf_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## a
+```{r}
+library(faraway)
+library(ggplot2)
+data(leafblotch)
+leafblotch$site=as.numeric(as.character(leafblotch$site))
+leafblotch$variety=as.numeric(as.character(leafblotch$variety))
+plot(leafblotch$site,leafblotch$blotch,xlab="site", ylab="blotch", main="blotch vs site")
+plot(leafblotch$variety,leafblotch$blotch,xlab="variety", ylab="blotch", main="blotch vs variety")
+```
+
+## b
+```{r}
+leafblotch$site=as.factor(as.character(leafblotch$site))
+leafblotch$variety=as.factor(as.character(leafblotch$variety))
+fitbin = glm(blotch~site+variety, family=binomial, data=leafblotch)
+summary(fitbin)
+pchisq(deviance(fitbin),df.residual(fitbin),lower=FALSE)
+```
+
+## c
+```{r}
+fitqbin = glm(blotch~site+variety, family=quasibinomial, data=leafblotch)
+sumary(fitqbin)
+dispersion = sum(residuals(fitbin,type = "pearson")^2)/df.residual(fitbin)
+dispersion
+```
+
+## d
+```{r}
+plot(fitqbin)
+```
+
+## e
+```{r}
+miu = 1/(fitted(fitqbin)*(1-fitted(fitqbin)))
+fit_1e = glm(blotch~site+variety,family=quasibinomial,data=leafblotch,weights = miu)
+plot(fit_1e)
+sumary(fit_1e)
+```
+
+## f
+```{r}
+drop1(fit_1e, test="F")
+```
+
+## g
+```{r}
+plot(fit_1e)
+```
+

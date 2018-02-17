@@ -1,0 +1,87 @@
+---
+title: "STAT34700-HW4 Problem 2"
+author: "Yangyu Liu"
+date: "February 11, 2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(faraway)
+install.packages("RLRsim")
+library(RLRsim)
+library(ggplot2)
+library(lme4)
+library(pbkrtest)
+```
+
+## a
+```{r}
+ggplot(lawn, aes(y=time, x=machine, shape=manufact, col=speed))+geom_point()+xlab("Machine")
+```
+
+
+
+## b
+```{r}
+data(lawn)
+fit_fix = lm(time~., data = lawn)
+summary(fit_fix)
+```
+
+## c
+$$time_{ijk}=\mu+M_i+S_j+T_{ij}+L_k+\epsilon_{ijk}$$
+```{r}
+fit_c=lmer(time~manufact*speed+(1|machine),data=lawn)
+summary(fit_c)
+sqrt(145.2+132.3)
+```
+
+## d
+```{r}
+fit_df = lmer(time~manufact*speed+(1|machine), data=lawn, REML=FALSE)
+fit_dn = lmer(time~manufact+speed+(1|machine), data=lawn, REML=FALSE)
+KRmodcomp(fit_df, fit_dn)
+fit_dm = lmer(time~manufact+(1|machine), data=lawn, REML=FALSE)
+fit_ds = lmer(time~speed+(1|machine), data=lawn, REML=FALSE)
+KRmodcomp(fit_dn, fit_dm)
+KRmodcomp(fit_dn, fit_ds)
+```
+interaction and manufactor are not significant.
+
+## e
+```{r}
+fit_e = lmer(time~speed+(1|machine), data=lawn)
+summary(fit_e)
+fit_ef = lm(time~speed, data=lawn)
+exactLRT(fit_e, fit_ef)
+```
+
+## f
+```{r}
+fit_f = lmer(time~speed+(1|manufact)+(1|manufact:machine), data=lawn)
+summary(fit_f)
+```
+
+```{r}
+#machine
+bsdmac <- numeric(1000)
+set.seed(123)
+for(i in 1:1000){
+y <- unlist(simulate(fit_f))
+bmod <- refit(fit_f, y)
+bsdmac[i] <- as.data.frame(VarCorr(bmod))$sdcor[1]
+}
+quantile(bsdmac, c(0.025, 0.975))
+#manufact
+bsdman <- numeric(1000)
+for(i in 1:1000){
+  yn <- unlist(simulate(fit_f))
+  bmodn <- refit(fit_f, yn)
+  bsdman[i] <- as.data.frame(VarCorr(bmodn))$sdcor[2]
+}
+quantile(bsdman, c(0.025, 0.975))
+
+confint(fit_f, method="boot")
+```
+
